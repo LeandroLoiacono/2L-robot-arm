@@ -40,11 +40,11 @@ public:
   void setCurrentPos(Point p);
   void setInterpolation(Point p1, float v = 0);
   void setInterpolation(Point p0, Point p1, float v = 0);
-  void setInterpolation(Point p0, Point p1, float av, boolean is_segment);
+  void setInterpolation(Point p0, Point p1, float av, bool is_segment);
 
   void handleSegments();
   void updateActualPosition();
-  void setArcInterpolation(float *target, float *offset_param, float feed_rate, uint8_t is_clockwise_arc); //, uint8_t extruder);
+  void setArcInterpolation(float *target, float *offset_param, float feed_rate, boolean is_clockwise_arc); //, uint8_t extruder);
   bool isFinished() const;
 
   void preventOverflow(float target[4]);

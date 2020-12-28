@@ -289,7 +289,7 @@ float Interpolation::getDistance() const {
   
 }
 
-void Interpolation::setArcInterpolation(float *target_param, float *offset_param, float feed_rate_param, bool is_clockwise_arc) {
+void Interpolation::setArcInterpolation(float *target_param, float *offset_param, float feed_rate_param, boolean is_clockwise_arc) {
   arc_start[X_AXIS] = getXPosmm();
   arc_start[Y_AXIS] = getYPosmm();
   arc_start[Z_AXIS] = getZPosmm();
