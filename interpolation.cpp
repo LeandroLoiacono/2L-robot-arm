@@ -6,6 +6,24 @@
 
 #define E_AXIS 3
 
+Interpolation::Interpolation() {
+  origin.xmm = 0.0;
+  origin.ymm= 0.0;
+  origin.zmm = 0.0;
+  origin.emm = 0.0;  
+}
+
+void Interpolation::setOrigin(Point origin_param) {
+  origin.xmm = origin_param.xmm;
+  origin.ymm = origin_param.ymm;
+  origin.zmm = origin_param.zmm;
+  origin.emm = origin_param.emm;
+  Logger::logINFO("Origin: [" + String(origin.xmm) + "," + String(origin.ymm) + "," + String(origin.zmm) + "," + String(origin.emm) + "]");
+}
+
+Point Interpolation::getOrigin() {
+  return origin;  
+}
 void Interpolation::setCurrentPos(float px, float py, float pz, float pe) {
   Point p;
   p.xmm = px;

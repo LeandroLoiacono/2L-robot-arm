@@ -36,7 +36,8 @@ class Command {
 };
 
 void cmdMove(Cmd(&cmd), Point pos, bool isRelativeCoord);
-void cmdArc(Cmd(&cmd), Point pos, bool isCW);
+void cmdArc(Cmd(&cmd), Point pos, bool isCW, bool isRelativeCoord);
+void cmdSetPosition(Cmd(&cmd));
 void cmdDwell(Cmd(&cmd));
 void printErr();
 

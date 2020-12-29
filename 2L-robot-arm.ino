@@ -114,23 +114,18 @@ void executeCommand(Cmd cmd) {
     return;
   }
 
+  Point origin = interpolator.getOrigin();
   // ABSOLUTE MODE: INTERPOLATOR COORDINATES USED IF NONE PROVIDED
-  if (isnan(cmd.valueX) && !command.isRelativeCoord){
-    cmd.valueX = interpolator.getXPosmm();
-  }
-  if (isnan(cmd.valueY) && !command.isRelativeCoord){
-    cmd.valueY = interpolator.getYPosmm();
-  }
-  if (isnan(cmd.valueZ) && !command.isRelativeCoord){
-    cmd.valueZ = interpolator.getZPosmm();
-  }
-  if (isnan(cmd.valueE) && !command.isRelativeCoord){
-    cmd.valueE = interpolator.getEPosmm();
+  if(!command.isRelativeCoord && cmd.num != 92) {
+    cmd.valueX = isnan(cmd.valueX) ? interpolator.getXPosmm() : cmd.valueX + origin.xmm;
+    cmd.valueY = isnan(cmd.valueY) ? interpolator.getYPosmm() : cmd.valueY + origin.ymm;
+    cmd.valueZ = isnan(cmd.valueZ) ? interpolator.getZPosmm() : cmd.valueZ + origin.zmm;
+    cmd.valueE = isnan(cmd.valueE) ? interpolator.getEPosmm() : cmd.valueE + origin.emm;
   }
 
   if (cmd.id == 'G') {
-    float target[4] = { cmd.valueX, cmd.valueY, cmd.valueZ, cmd.valueE };
-    float offset[3] = { cmd.valueI, cmd.valueJ, cmd.valueK };
+    float target[4];
+    float offset[3];
     
     switch (cmd.num) {
     case 0:
@@ -143,7 +138,14 @@ void executeCommand(Cmd cmd) {
     case 2:
     case 3: 
       fan.enable(true);
-      cmdArc(cmd,interpolator.getPosmm(), true);
+      cmdArc(cmd,interpolator.getPosmm(), cmd.num == 2, command.isRelativeCoord);
+      target[X_AXIS] = cmd.valueX;
+      target[Y_AXIS] = cmd.valueY; 
+      target[Z_AXIS] = cmd.valueZ; 
+      target[E_AXIS] = cmd.valueE; 
+      offset[X_AXIS] = cmd.valueI;
+      offset[Y_AXIS] = cmd.valueJ;
+      offset[Z_AXIS] = cmd.valueK;
       if((!isnan(offset[X_AXIS]) && !isnan(offset[Y_AXIS])) || (!isnan(offset[X_AXIS]) && !isnan(offset[Z_AXIS])) || (!isnan(offset[Y_AXIS]) && !isnan(offset[Z_AXIS]))) {
         interpolator.setArcInterpolation(target, offset, cmd.valueF, cmd.num == 2);
       } else {
@@ -154,6 +156,18 @@ void executeCommand(Cmd cmd) {
     case 28: homeSequence(); break;
     case 90: command.cmdToAbsolute(); break; // ABSOLUTE COORDINATE MODE
     case 91: command.cmdToRelative(); break; // RELATIVE COORDINATE MODE
+    case 92: 
+      cmd.valueX = isnan(cmd.valueX) ? 0 : cmd.valueX;
+      cmd.valueY = isnan(cmd.valueY) ? 0 : cmd.valueY;
+      cmd.valueZ = isnan(cmd.valueZ) ? 0 : cmd.valueZ;
+      cmd.valueE = isnan(cmd.valueE) ? 0 : cmd.valueE;
+      Point newOrigin;
+      newOrigin.xmm = interpolator.getXPosmm() - cmd.valueX;
+      newOrigin.ymm = interpolator.getYPosmm() - cmd.valueY;
+      newOrigin.zmm = interpolator.getZPosmm() - cmd.valueZ;
+      newOrigin.emm = interpolator.getEPosmm() - cmd.valueE;
+      interpolator.setOrigin(newOrigin);
+      break; 
     default: printErr();
     }
   }
@@ -207,4 +221,10 @@ void homeSequence(){
     }
   }
   interpolator.setInterpolation(INITIAL_X, INITIAL_Y, INITIAL_Z, INITIAL_E0, INITIAL_X, INITIAL_Y, INITIAL_Z, INITIAL_E0);
+  Point initialOrigin;
+  initialOrigin.xmm = 0;
+  initialOrigin.ymm = 0;
+  initialOrigin.zmm = 0;
+  initialOrigin.emm = 0;
+  interpolator.setOrigin(initialOrigin);
 }

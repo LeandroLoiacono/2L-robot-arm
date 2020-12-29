@@ -142,11 +142,21 @@ void cmdMove(Cmd(&cmd), Point pos, bool isRelativeCoord){
   Serial.println(cmd.valueE);
 }
 
-void cmdArc(Cmd(&cmd), Point pos, bool isCW){
+void cmdArc(Cmd(&cmd), Point pos, bool isCW, bool isRelativeCoord){
   if(isCW) {
     Serial.print("// CW Arc to: X");
   } else {
     Serial.print("// CCW Arc to: X");
+  }
+  if(isRelativeCoord == true){
+    if (isnan(cmd.valueX)){cmd.valueX=0;}
+    if (isnan(cmd.valueY)){cmd.valueY=0;}
+    if (isnan(cmd.valueZ)){cmd.valueZ=0;}
+    if (isnan(cmd.valueE)){cmd.valueE=0;}
+    cmd.valueX += pos.xmm;
+    cmd.valueY += pos.ymm;
+    cmd.valueZ += pos.zmm;
+    cmd.valueE += pos.emm;
   }
   Serial.print(cmd.valueX);
   Serial.print(" Y");
@@ -164,6 +174,16 @@ void cmdArc(Cmd(&cmd), Point pos, bool isCW){
   
 }
 
+void cmdSetPosition(Cmd(&cmd)) {
+  Serial.print("// Setting position to: X");
+  Serial.print(cmd.valueX);  
+  Serial.print(" Y");
+  Serial.print(cmd.valueY);
+  Serial.print(" Z");
+  Serial.print(cmd.valueZ);
+  Serial.print(" E");
+  Serial.println(cmd.valueE);
+}
 void cmdDwell(Cmd(&cmd)){
   delay(int(cmd.valueS * 1000));
 }
