@@ -11,7 +11,7 @@ void Logger::log(String message, int level) {
         Serial.print("INFO: ");
       break;
       case LOG_DEBUG:
-        Serial.println("DEBUG: ");
+        Serial.print("DEBUG: ");
       break;
     }
     Serial.println(message);

@@ -11,6 +11,9 @@ Interpolation::Interpolation() {
   origin.ymm= 0.0;
   origin.zmm = 0.0;
   origin.emm = 0.0;  
+  toolOffset[X_AXIS] = 0.0;
+  toolOffset[Y_AXIS] = 0.0;
+  toolOffset[Z_AXIS] = 0.0;
 }
 
 void Interpolation::setOrigin(Point origin_param) {
@@ -21,9 +24,19 @@ void Interpolation::setOrigin(Point origin_param) {
   Logger::logINFO("Origin: [" + String(origin.xmm) + "," + String(origin.ymm) + "," + String(origin.zmm) + "," + String(origin.emm) + "]");
 }
 
-Point Interpolation::getOrigin() {
+Point Interpolation::getOrigin() const {
   return origin;  
 }
+
+Point Interpolation::getDefaultOrigin() const {
+  Point defaultOrigin;
+  defaultOrigin.xmm = 0.0;
+  defaultOrigin.ymm = 0.0;
+  defaultOrigin.zmm = 0.0;
+  defaultOrigin.emm = 0.0;
+  return defaultOrigin;
+}
+
 void Interpolation::setCurrentPos(float px, float py, float pz, float pe) {
   Point p;
   p.xmm = px;
@@ -120,10 +133,10 @@ void Interpolation::setInterpolation(Point p0, Point p1, float av, boolean is_se
 }
 
 void Interpolation::setCurrentPos(Point p) {
-  xStartmm = p.xmm;
-  yStartmm = p.ymm;
-  zStartmm = p.zmm;
-  eStartmm = p.emm;
+  xStartmm = p.xmm + origin.xmm;
+  yStartmm = p.ymm + origin.ymm;
+  zStartmm = p.zmm + origin.zmm;
+  eStartmm = p.emm + origin.emm;
   xDelta = 0;
   yDelta = 0;
   zDelta = 0;
@@ -132,6 +145,11 @@ void Interpolation::setCurrentPos(Point p) {
   segments_index = 0;
 }
 
+void Interpolation::setToolOffset(float toolOffset_x, float toolOffset_y, float toolOffset_z) {
+  toolOffset[X_AXIS] = toolOffset_x;
+  toolOffset[Y_AXIS] = toolOffset_y;
+  toolOffset[Z_AXIS] = toolOffset_z;  
+}
 
 void Interpolation::updateActualPosition() {
   switch (state) {
@@ -183,13 +201,31 @@ void Interpolation::linearUpdate() {
   float progress = getProgress();
 
   float target[4] = {xStartmm + progress * xDelta, yStartmm + progress * yDelta, zStartmm + progress * zDelta, eStartmm + progress * eDelta};
-  preventOverflow(target);
   
-  xPosmm = target[X_AXIS];
-  yPosmm = target[Y_AXIS];
-  zPosmm = target[Z_AXIS];
-  ePosmm = target[E_AXIS];
   
+  //preventOverflow(target);
+  if(isAllowedPosition(target)) {
+    xPosmm = target[X_AXIS];
+    yPosmm = target[Y_AXIS];
+    zPosmm = target[Z_AXIS];
+    ePosmm = target[E_AXIS];
+  } else {
+    target[X_AXIS] = xPosmm;
+    target[Y_AXIS] = yPosmm;
+    target[Z_AXIS] = zPosmm;
+    target[E_AXIS] = ePosmm;
+    state = STATE_NONE;
+    progress = 1.0;
+    //setCurrentPos(xPosmm,yPosmm,zPosmm,ePosmm);
+    xStartmm = xPosmm;
+    yStartmm = yPosmm;
+    zStartmm = zPosmm;
+    eStartmm = ePosmm;
+    xDelta = 0;
+    yDelta = 0;
+    zDelta = 0;
+    eDelta = 0;
+  }
 }
 
 void Interpolation::arcUpdate() {
@@ -390,16 +426,15 @@ void Interpolation::setArcInterpolation(float *target_param, float *offset_param
   state = STATE_ARC_INTERPOLATION;
 }
 
-void Interpolation::preventOverflow(float target[4])
-{ 
-  if(target[X_AXIS] < X_MIN) target[X_AXIS] = X_MIN;
-  if(target[Y_AXIS] < Y_MIN) target[Y_AXIS] = Y_MIN;
-  if(target[Z_AXIS] < Z_MIN) target[Z_AXIS] = Z_MIN;
-  if(target[E_AXIS] < E_MIN) target[E_AXIS] = E_MIN;
-
-  if (target[X_AXIS] > X_MAX) target[X_AXIS] = X_MAX;
-  if (target[Y_AXIS] > Y_MAX) target[Y_AXIS] = Y_MAX;
-  if (target[Z_AXIS] > Z_MAX) target[Z_AXIS] = Z_MAX;
-  if (target[X_AXIS] > X_MAX) target[X_AXIS] = X_MAX;
-  //return target;
+bool Interpolation::isAllowedPosition(float target[4]) {
+  float squaredPositionModule = target[X_AXIS]*target[X_AXIS] + target[Y_AXIS]*target[Y_AXIS] + target[Z_AXIS]*target[Z_AXIS];
+  
+  if((squaredPositionModule <= R_MAX*R_MAX) 
+      &&
+     (squaredPositionModule >= R_MIN*R_MIN) && (target[Z_AXIS]) >=( Z_MIN + toolOffset[Z_AXIS])) {
+    return true;
+  }   
+  Logger::logDEBUG("squaredPositionModule: " + String(squaredPositionModule) + ", R_MIN^2: " + String(R_MIN*R_MIN) + ", R_MAX^2: " + String(R_MAX*R_MAX));
+  Logger::logDEBUG("Position NOT allowed: [" + String(target[X_AXIS]) + "," + String(target[Y_AXIS]) + "," + String(target[Z_AXIS]) + "," + String(target[E_AXIS]) + "]");
+  return false;
 }

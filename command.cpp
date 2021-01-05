@@ -1,4 +1,5 @@
 #include "command.h"
+#include "logger.h"
 #include <Arduino.h>
 
 Command::Command() {
@@ -95,7 +96,7 @@ Cmd Command::getCmd() const {
   return new_command; 
 }
 
-void Command::cmdGetPosition(Point pos){
+void Command::cmdGetPosition(Point pos, float highRad, float lowRad, float rotRad){
   if(isRelativeCoord) {
     Serial.println("// Relative Coordinate Mode //");
   } else {
@@ -109,6 +110,12 @@ void Command::cmdGetPosition(Point pos){
   Serial.print(pos.zmm);
   Serial.print(" E");
   Serial.println(pos.emm);
+  Serial.print("// Radians - HIGH ");
+  Serial.print(highRad);
+  Serial.print(" LOW ");
+  Serial.print(lowRad);
+  Serial.print(" ROT ");
+  Serial.println(rotRad);
 }
 
 void Command::cmdToRelative(){
@@ -121,73 +128,24 @@ void Command::cmdToAbsolute(){
   Serial.println("// Absolute Coordinate Mode //");
 }
 
-void cmdMove(Cmd(&cmd), Point pos, bool isRelativeCoord){
+void cmdMove(Cmd(&cmd), Point pos, Point origin, bool isRelativeCoord){
   if(isRelativeCoord == true){
-    if (isnan(cmd.valueX)){cmd.valueX=0;}
-    if (isnan(cmd.valueY)){cmd.valueY=0;}
-    if (isnan(cmd.valueZ)){cmd.valueZ=0;}
-    if (isnan(cmd.valueE)){cmd.valueE=0;}
-    cmd.valueX += pos.xmm;
-    cmd.valueY += pos.ymm;
-    cmd.valueZ += pos.zmm;
-    cmd.valueE += pos.emm;
-  }
-  Serial.print("// Move to: X");
-  Serial.print(cmd.valueX);
-  Serial.print(" Y");
-  Serial.print(cmd.valueY);
-  Serial.print(" Z");
-  Serial.print(cmd.valueZ);
-  Serial.print(" E");
-  Serial.println(cmd.valueE);
-}
-
-void cmdArc(Cmd(&cmd), Point pos, bool isCW, bool isRelativeCoord){
-  if(isCW) {
-    Serial.print("// CW Arc to: X");
+    cmd.valueX = isnan(cmd.valueX) ? cmd.valueX + pos.xmm : 0.0;
+    cmd.valueY = isnan(cmd.valueY) ? cmd.valueY + pos.ymm : 0.0;
+    cmd.valueZ = isnan(cmd.valueZ) ? cmd.valueZ + pos.zmm : 0.0;
+    cmd.valueE = isnan(cmd.valueE) ? cmd.valueE + pos.emm : 0.0; 
   } else {
-    Serial.print("// CCW Arc to: X");
-  }
-  if(isRelativeCoord == true){
-    if (isnan(cmd.valueX)){cmd.valueX=0;}
-    if (isnan(cmd.valueY)){cmd.valueY=0;}
-    if (isnan(cmd.valueZ)){cmd.valueZ=0;}
-    if (isnan(cmd.valueE)){cmd.valueE=0;}
-    cmd.valueX += pos.xmm;
-    cmd.valueY += pos.ymm;
-    cmd.valueZ += pos.zmm;
-    cmd.valueE += pos.emm;
-  }
-  Serial.print(cmd.valueX);
-  Serial.print(" Y");
-  Serial.print(cmd.valueY);
-  Serial.print(" Z");
-  Serial.print(cmd.valueZ);
-  Serial.print(" E");
-  Serial.print(cmd.valueE);
-  Serial.print(" I");
-  Serial.print(cmd.valueI);
-  Serial.print(" J");
-  Serial.print(cmd.valueJ);
-  Serial.print(" K");
-  Serial.println(cmd.valueK);
-  
+    cmd.valueX = isnan(cmd.valueX) ? pos.xmm : cmd.valueX + origin.xmm;
+    cmd.valueY = isnan(cmd.valueY) ? pos.ymm : cmd.valueY + origin.ymm;
+    cmd.valueZ = isnan(cmd.valueZ) ? pos.zmm : cmd.valueZ + origin.zmm;
+    cmd.valueE = isnan(cmd.valueE) ? pos.emm : cmd.valueE + origin.emm; 
+  }  
 }
 
-void cmdSetPosition(Cmd(&cmd)) {
-  Serial.print("// Setting position to: X");
-  Serial.print(cmd.valueX);  
-  Serial.print(" Y");
-  Serial.print(cmd.valueY);
-  Serial.print(" Z");
-  Serial.print(cmd.valueZ);
-  Serial.print(" E");
-  Serial.println(cmd.valueE);
-}
 void cmdDwell(Cmd(&cmd)){
   delay(int(cmd.valueS * 1000));
 }
 
 void printErr() {
-  Serial.println("// Error: Incorrect Command");
+  Logger::logERROR("Incorrect Command");
 }

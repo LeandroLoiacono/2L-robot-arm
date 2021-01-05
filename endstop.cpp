@@ -31,8 +31,8 @@ void Endstop::home(bool dir) {
     delayMicroseconds(home_dwell);
     bState = digitalRead(min_pin);
   }
-  Logger::logINFO("Endstop reached");
-  Logger::logINFO("Moving to initial position");
+  Logger::logDEBUG("Endstop reached");
+  Logger::logDEBUG("Moving to initial position");
   homeOffset(dir);
 }
 

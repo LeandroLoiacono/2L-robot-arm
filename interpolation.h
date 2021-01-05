@@ -35,7 +35,8 @@ public:
   //void resetInterpolation(Point p0, Point p1);
   
   void Interpolation::setOrigin(Point origin_param);
-  Point Interpolation::getOrigin();  
+  Point Interpolation::getOrigin() const;  
+  Point getDefaultOrigin() const;
   void setCurrentPos(float px, float py, float pz, float pe);
   void setInterpolation(float px, float py, float pz, float pe, float v = 0);
   void setInterpolation(float p1x, float p1y, float p1z, float p1e, float p2x, float p2y, float p2z, float p2e, float av = 0);
@@ -45,12 +46,15 @@ public:
   void setInterpolation(Point p0, Point p1, float v = 0);
   void setInterpolation(Point p0, Point p1, float av, boolean is_segment);
 
+  void setToolOffset(float toolOffset_x, float toolOffset_y, float toolOffset_z);
+  
   void handleSegments();
   void updateActualPosition();
   void setArcInterpolation(float *target, float *offset_param, float feed_rate, boolean is_clockwise_arc); //, uint8_t extruder);
   bool isFinished() const;
 
-  void preventOverflow(float target[4]);
+  //void preventOverflow(float target[4]);
+  bool isAllowedPosition(float target[4]);
   
   float getXPosmm() const;
   float getYPosmm() const;
@@ -105,6 +109,7 @@ private:
   uint8_t endstate;
   uint16_t segments_nr;
   uint16_t segments_index;
+  float toolOffset[3];
 };
 
 #endif

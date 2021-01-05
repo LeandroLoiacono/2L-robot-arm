@@ -43,31 +43,30 @@ Interpolation interpolator;
 Queue<Cmd> queue(QUEUE_SIZE);
 Command command;
 
-int feedmultiply = 100; 
-
 void setup()
 {
   Serial.begin(BAUD);
+  
   stepperHigher.setPositionRad(PI / 2.0); // 90°
   stepperLower.setPositionRad(0);         // 0°
   stepperRotate.setPositionRad(0);        // 0°
   stepperRail.setPosition(0);
   if (HOME_ON_BOOT) { //HOME DURING SETUP() IF HOME_ON_BOOT ENABLED
     homeSequence(); 
-    Serial.println("Robot Online.");
+    Logger::logINFO("Robot Online.");
   } else {
     setStepperEnable(false); //ROBOT ADJUSTABLE BY HAND AFTER TURNING ON
     if (HOME_X_STEPPER && HOME_Y_STEPPER && !HOME_Z_STEPPER){
-      Serial.println("Robot Online.");
-      Serial.println("Rotate robot to face front centre & send G28.");
+      Logger::logINFO("Robot Online.");
+      Logger::logINFO("Rotate robot to face front centre & send G28.");
     }
     if (HOME_X_STEPPER && HOME_Y_STEPPER && HOME_Z_STEPPER){
-      Serial.println("Robot Online.");
-      Serial.println("Send G28 to calibrate.");
+      Logger::logINFO("Robot Online.");
+      Logger::logINFO("Send G28 to calibrate.");
     }
     if (!HOME_X_STEPPER && !HOME_Y_STEPPER){
-      Serial.println("Robot Online.");
-      Serial.println("Home robot manually and send G28 to calibrate.");
+      Logger::logINFO("Robot Online.");
+      Logger::logINFO("Home robot manually and send G28 to calibrate.");
     }
   }
   interpolator.setInterpolation(INITIAL_X, INITIAL_Y, INITIAL_Z, INITIAL_E0, INITIAL_X, INITIAL_Y, INITIAL_Z, INITIAL_E0);
@@ -115,60 +114,60 @@ void executeCommand(Cmd cmd) {
   }
 
   Point origin = interpolator.getOrigin();
-  // ABSOLUTE MODE: INTERPOLATOR COORDINATES USED IF NONE PROVIDED
-  if(!command.isRelativeCoord && cmd.num != 92) {
-    cmd.valueX = isnan(cmd.valueX) ? interpolator.getXPosmm() : cmd.valueX + origin.xmm;
-    cmd.valueY = isnan(cmd.valueY) ? interpolator.getYPosmm() : cmd.valueY + origin.ymm;
-    cmd.valueZ = isnan(cmd.valueZ) ? interpolator.getZPosmm() : cmd.valueZ + origin.zmm;
-    cmd.valueE = isnan(cmd.valueE) ? interpolator.getEPosmm() : cmd.valueE + origin.emm;
-  }
-
+  
   if (cmd.id == 'G') {
     float target[4];
     float offset[3];
+    String logMsg = "// ";
     
     switch (cmd.num) {
-    case 0:
-    case 1:
-      fan.enable(true);
-      cmdMove(cmd,interpolator.getPosmm(), command.isRelativeCoord);
-      interpolator.setInterpolation(cmd.valueX, cmd.valueY, cmd.valueZ, cmd.valueE, cmd.valueF);
+      case 0:
+      case 1:
+        fan.enable(true);
+        cmdMove(cmd,interpolator.getPosmm(), interpolator.getOrigin(), command.isRelativeCoord);
+        Logger::logINFO("// Move to: X" + String(cmd.valueX) + " Y" + String(cmd.valueY) + " Z" + String(cmd.valueZ) + " E" + String(cmd.valueE));
+        interpolator.setInterpolation(cmd.valueX, cmd.valueY, cmd.valueZ, cmd.valueE, cmd.valueF);
+        break;
+      //case 1: cmdMove(cmd); break;
+      case 2:
+      case 3: 
+        fan.enable(true);
+        cmdMove(cmd,interpolator.getPosmm(), interpolator.getOrigin(), command.isRelativeCoord);
+        
+        logMsg += cmd.num ==2 ? "CW " : "CCW";
+        logMsg += "ARC to: X" + String(cmd.valueX) + " Y" + String(cmd.valueY) + " Z" + String(cmd.valueZ) + " E" + String(cmd.valueE);
+        logMsg += " I" + String(cmd.valueI) + " J" + String(cmd.valueJ) + " K" + String(cmd.valueK);
+        Logger::logINFO(logMsg);
+        
+        target[X_AXIS] = cmd.valueX;
+        target[Y_AXIS] = cmd.valueY; 
+        target[Z_AXIS] = cmd.valueZ; 
+        target[E_AXIS] = cmd.valueE; 
+        offset[X_AXIS] = cmd.valueI;
+        offset[Y_AXIS] = cmd.valueJ;
+        offset[Z_AXIS] = cmd.valueK;
+        if((!isnan(offset[X_AXIS]) && !isnan(offset[Y_AXIS])) || (!isnan(offset[X_AXIS]) && !isnan(offset[Z_AXIS])) || (!isnan(offset[Y_AXIS]) && !isnan(offset[Z_AXIS]))) {
+          interpolator.setArcInterpolation(target, offset, cmd.valueF, cmd.num == 2);
+        } else {
+          printErr();
+        }
       break;
-    //case 1: cmdMove(cmd); break;
-    case 2:
-    case 3: 
-      fan.enable(true);
-      cmdArc(cmd,interpolator.getPosmm(), cmd.num == 2, command.isRelativeCoord);
-      target[X_AXIS] = cmd.valueX;
-      target[Y_AXIS] = cmd.valueY; 
-      target[Z_AXIS] = cmd.valueZ; 
-      target[E_AXIS] = cmd.valueE; 
-      offset[X_AXIS] = cmd.valueI;
-      offset[Y_AXIS] = cmd.valueJ;
-      offset[Z_AXIS] = cmd.valueK;
-      if((!isnan(offset[X_AXIS]) && !isnan(offset[Y_AXIS])) || (!isnan(offset[X_AXIS]) && !isnan(offset[Z_AXIS])) || (!isnan(offset[Y_AXIS]) && !isnan(offset[Z_AXIS]))) {
-        interpolator.setArcInterpolation(target, offset, cmd.valueF, cmd.num == 2);
-      } else {
-        printErr();
-      }
-    break;
-    case 4: cmdDwell(cmd); break;
-    case 28: homeSequence(); break;
-    case 90: command.cmdToAbsolute(); break; // ABSOLUTE COORDINATE MODE
-    case 91: command.cmdToRelative(); break; // RELATIVE COORDINATE MODE
-    case 92: 
-      cmd.valueX = isnan(cmd.valueX) ? 0 : cmd.valueX;
-      cmd.valueY = isnan(cmd.valueY) ? 0 : cmd.valueY;
-      cmd.valueZ = isnan(cmd.valueZ) ? 0 : cmd.valueZ;
-      cmd.valueE = isnan(cmd.valueE) ? 0 : cmd.valueE;
-      Point newOrigin;
-      newOrigin.xmm = interpolator.getXPosmm() - cmd.valueX;
-      newOrigin.ymm = interpolator.getYPosmm() - cmd.valueY;
-      newOrigin.zmm = interpolator.getZPosmm() - cmd.valueZ;
-      newOrigin.emm = interpolator.getEPosmm() - cmd.valueE;
-      interpolator.setOrigin(newOrigin);
-      break; 
-    default: printErr();
+      case 4: cmdDwell(cmd); break;
+      case 28:
+        homeSequence(); 
+        break;
+      case 90: command.cmdToAbsolute(); break; // ABSOLUTE COORDINATE MODE
+      case 91: command.cmdToRelative(); break; // RELATIVE COORDINATE MODE
+      case 92:  
+        cmdMove(cmd,interpolator.getPosmm(), interpolator.getDefaultOrigin(), false);
+        Point newOrigin;
+        newOrigin.xmm = interpolator.getXPosmm() - cmd.valueX;
+        newOrigin.ymm = interpolator.getYPosmm() - cmd.valueY;
+        newOrigin.zmm = interpolator.getZPosmm() - cmd.valueZ;
+        newOrigin.emm = interpolator.getEPosmm() - cmd.valueE;
+        interpolator.setOrigin(newOrigin);
+        break; 
+      default: printErr();
     }
   }
   else if (cmd.id == 'M') {
@@ -183,14 +182,13 @@ void executeCommand(Cmd cmd) {
       case 18: setStepperEnable(false); break;
       case 106: fan.enable(true); break;
       case 107: fan.enable(false); break;
-      case 114: command.cmdGetPosition(interpolator.getPosmm()); break;// Return the current positions of all axis 
+      case 114: command.cmdGetPosition(interpolator.getPosmm(), stepperHigher.getPosition(), stepperLower.getPosition(), stepperRotate.getPosition()); break;// Return the current positions of all axis 
       default: printErr(); 
     }
   }
   else {
     printErr();
   }
-  Serial.println("ok");
 }
 
 void setStepperEnable(bool enable){
@@ -221,10 +219,5 @@ void homeSequence(){
     }
   }
   interpolator.setInterpolation(INITIAL_X, INITIAL_Y, INITIAL_Z, INITIAL_E0, INITIAL_X, INITIAL_Y, INITIAL_Z, INITIAL_E0);
-  Point initialOrigin;
-  initialOrigin.xmm = 0;
-  initialOrigin.ymm = 0;
-  initialOrigin.zmm = 0;
-  initialOrigin.emm = 0;
-  interpolator.setOrigin(initialOrigin);
+  interpolator.setOrigin(interpolator.getDefaultOrigin());
 }

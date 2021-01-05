@@ -25,7 +25,7 @@ class Command {
     bool processMessage(String msg);
     void value_segment(String msg_segment);
     Cmd getCmd() const;
-    void cmdGetPosition(Point pos);
+    void cmdGetPosition(Point pos, float highRad, float lowRad, float rotRad);
     void cmdToRelative();
     void cmdToAbsolute();
     bool isRelativeCoord;
@@ -35,10 +35,7 @@ class Command {
     String message;
 };
 
-void cmdMove(Cmd(&cmd), Point pos, bool isRelativeCoord);
-void cmdArc(Cmd(&cmd), Point pos, bool isCW, bool isRelativeCoord);
-void cmdSetPosition(Cmd(&cmd));
+void cmdMove(Cmd(&cmd), Point pos, Point origin, bool isRelativeCoord);
 void cmdDwell(Cmd(&cmd));
 void printErr();
-
 #endif
