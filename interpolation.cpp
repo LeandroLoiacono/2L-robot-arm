@@ -431,7 +431,7 @@ bool Interpolation::isAllowedPosition(float target[4]) {
   
   if((squaredPositionModule <= R_MAX*R_MAX) 
       &&
-     (squaredPositionModule >= R_MIN*R_MIN) && (target[Z_AXIS]) >=( Z_MIN + toolOffset[Z_AXIS])) {
+     (squaredPositionModule >= R_MIN*R_MIN) && (target[Z_AXIS]) >= Z_MIN) {
     return true;
   }   
   Logger::logDEBUG("squaredPositionModule: " + String(squaredPositionModule) + ", R_MIN^2: " + String(R_MIN*R_MIN) + ", R_MAX^2: " + String(R_MAX*R_MAX));
