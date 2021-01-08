@@ -3,7 +3,7 @@
 
 class RampsStepper {
 public:
-  RampsStepper(int aStepPin, int aDirPin, int aEnablePin, bool aInverse);
+  RampsStepper(int aStepPin, int aDirPin, int aEnablePin, bool aInverse, int microsteps);
   void enable(bool value = true);
     
   bool isOnPosition() const;

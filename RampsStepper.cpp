@@ -3,8 +3,8 @@
 
 #include <Arduino.h>
 
-RampsStepper::RampsStepper(int aStepPin, int aDirPin, int aEnablePin, bool aInverse) {
-  setReductionRatio(MAIN_GEAR_TEETH / MOTOR_GEAR_TEETH, MICROSTEPS * STEPS_PER_REV);
+RampsStepper::RampsStepper(int aStepPin, int aDirPin, int aEnablePin, bool aInverse, int microsteps) {
+  setReductionRatio(MAIN_GEAR_TEETH / MOTOR_GEAR_TEETH, microsteps * STEPS_PER_REV);
   stepPin = aStepPin;
   dirPin = aDirPin;
   enablePin = aEnablePin;

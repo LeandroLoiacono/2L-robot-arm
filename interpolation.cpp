@@ -8,12 +8,13 @@
 
 Interpolation::Interpolation() {
   origin.xmm = 0.0;
-  origin.ymm= 0.0;
+  origin.ymm = 0.0;
   origin.zmm = 0.0;
   origin.emm = 0.0;  
   toolOffset[X_AXIS] = 0.0;
   toolOffset[Y_AXIS] = 0.0;
   toolOffset[Z_AXIS] = 0.0;
+  state = STATE_NONE;
 }
 
 void Interpolation::setOrigin(Point origin_param) {

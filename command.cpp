@@ -130,10 +130,10 @@ void Command::cmdToAbsolute(){
 
 void cmdMove(Cmd(&cmd), Point pos, Point origin, bool isRelativeCoord){
   if(isRelativeCoord == true){
-    cmd.valueX = isnan(cmd.valueX) ? cmd.valueX + pos.xmm : 0.0;
-    cmd.valueY = isnan(cmd.valueY) ? cmd.valueY + pos.ymm : 0.0;
-    cmd.valueZ = isnan(cmd.valueZ) ? cmd.valueZ + pos.zmm : 0.0;
-    cmd.valueE = isnan(cmd.valueE) ? cmd.valueE + pos.emm : 0.0; 
+    cmd.valueX = isnan(cmd.valueX) ? pos.xmm : cmd.valueX + pos.xmm;
+    cmd.valueY = isnan(cmd.valueY) ? pos.ymm : cmd.valueY + pos.ymm;
+    cmd.valueZ = isnan(cmd.valueZ) ? pos.zmm : cmd.valueZ + pos.zmm;
+    cmd.valueE = isnan(cmd.valueE) ? pos.emm : cmd.valueE + pos.emm; 
   } else {
     cmd.valueX = isnan(cmd.valueX) ? pos.xmm : cmd.valueX + origin.xmm;
     cmd.valueY = isnan(cmd.valueY) ? pos.ymm : cmd.valueY + origin.ymm;
