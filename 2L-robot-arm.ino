@@ -125,7 +125,7 @@ void executeCommand(Cmd cmd) {
       case 1:
         fan.enable(true);
         cmdMove(cmd,interpolator.getPosmm(), interpolator.getOrigin(), command.isRelativeCoord);
-        Logger::logINFO("// Move to: X" + String(cmd.valueX) + " Y" + String(cmd.valueY) + " Z" + String(cmd.valueZ) + " E" + String(cmd.valueE));
+        Logger::logINFO("// Move to: X" + String(cmd.valueX) + " Y" + String(cmd.valueY) + " Z" + String(cmd.valueZ) + " E" + String(cmd.valueE) + " F" + String(cmd.valueF));
         interpolator.setInterpolation(cmd.valueX, cmd.valueY, cmd.valueZ, cmd.valueE, cmd.valueF);
         break;
       //case 1: cmdMove(cmd); break;

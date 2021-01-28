@@ -154,10 +154,10 @@ void Interpolation::setToolOffset(float toolOffset_x, float toolOffset_y, float 
 
 void Interpolation::updateActualPosition() {
   switch (state) {
-    case 0:
+    case STATE_LINEAR_INTERPOLATION:
       linearUpdate();
       break;
-    case 1:
+    case STATE_ARC_INTERPOLATION:
       arcUpdate();
     default:
       return;
@@ -428,14 +428,14 @@ void Interpolation::setArcInterpolation(float *target_param, float *offset_param
 }
 
 bool Interpolation::isAllowedPosition(float target[4]) {
-  float squaredPositionModule = target[X_AXIS]*target[X_AXIS] + target[Y_AXIS]*target[Y_AXIS] + target[Z_AXIS]*target[Z_AXIS];
+  float squaredPositionModule = target[X_AXIS]*target[X_AXIS] + target[Y_AXIS] * target[Y_AXIS] + target[Z_AXIS]*target[Z_AXIS];
   
   if((squaredPositionModule <= R_MAX*R_MAX) 
       &&
-     (squaredPositionModule >= R_MIN*R_MIN) && (target[Z_AXIS]) >= Z_MIN) {
+     (squaredPositionModule >= R_MIN*R_MIN) && (target[Z_AXIS]) >= Z_MIN && (target[Z_AXIS]) <= Z_MAX) {
     return true;
   }   
   Logger::logDEBUG("squaredPositionModule: " + String(squaredPositionModule) + ", R_MIN^2: " + String(R_MIN*R_MIN) + ", R_MAX^2: " + String(R_MAX*R_MAX));
-  Logger::logDEBUG("Position NOT allowed: [" + String(target[X_AXIS]) + "," + String(target[Y_AXIS]) + "," + String(target[Z_AXIS]) + "," + String(target[E_AXIS]) + "]");
+  Logger::logERROR("Position NOT allowed: [" + String(target[X_AXIS]) + "," + String(target[Y_AXIS]) + "," + String(target[Z_AXIS]) + "," + String(target[E_AXIS]) + "]");
   return false;
 }
