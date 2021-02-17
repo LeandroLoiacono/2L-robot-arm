@@ -38,7 +38,7 @@ Equipment led(LED_PIN);
 FanControl fan(FAN_PIN, FAN_DELAY);
 
 //EXECUTION & COMMAND OBJECTS
-RobotGeometry geometry(END_EFFECTOR_OFFSET, SHANK_LENGTH);
+RobotGeometry geometry(END_EFFECTOR_OFFSET, LOW_SHANK_LENGTH, HIGH_SHANK_LENGTH);
 Interpolation interpolator;
 Queue<Cmd> queue(QUEUE_SIZE);
 Command command;
@@ -149,7 +149,7 @@ void executeCommand(Cmd cmd) {
         if((!isnan(offset[X_AXIS]) && !isnan(offset[Y_AXIS])) || (!isnan(offset[X_AXIS]) && !isnan(offset[Z_AXIS])) || (!isnan(offset[Y_AXIS]) && !isnan(offset[Z_AXIS]))) {
           interpolator.setArcInterpolation(target, offset, cmd.valueF, cmd.num == 2);
         } else {
-          printErr();
+          Logger::logWARNING("Incorrect Command");
         }
       break;
       case 4: cmdDwell(cmd); break;
@@ -167,7 +167,7 @@ void executeCommand(Cmd cmd) {
         newOrigin.emm = interpolator.getEPosmm() - cmd.valueE;
         interpolator.setOrigin(newOrigin);
         break; 
-      default: printErr();
+      default: Logger::logWARNING("Unknown Command");
     }
   }
   else if (cmd.id == 'M') {
@@ -183,10 +183,10 @@ void executeCommand(Cmd cmd) {
       case 106: fan.enable(true); break;
       case 107: fan.enable(false); break;
       case 114: command.cmdGetPosition(interpolator.getPosmm(), stepperHigher.getPosition(), stepperLower.getPosition(), stepperRotate.getPosition()); break;// Return the current positions of all axis 
-      default: printErr(); 
+      default: Logger::logWARNING("Unknown Command");
     }
   } else {
-    printErr();
+    Logger::logWARNING("Unknown Command");
   }
 }
 

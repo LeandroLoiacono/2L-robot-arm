@@ -7,6 +7,9 @@ void Logger::log(String message, int level) {
       case LOG_ERROR:
         Serial.print("ERROR: ");
       break;
+      case LOG_WARNING:
+        Serial.print("WARNING: ");
+      break;
       case LOG_INFO:
         Serial.print("INFO: ");
       break;
@@ -19,6 +22,9 @@ void Logger::log(String message, int level) {
 }
 void Logger::logERROR(String message) {
   log(message, LOG_ERROR);
+}
+void Logger::logWARNING(String message) {
+  log(message, LOG_WARNING);
 }
 void Logger::logINFO(String message) {
   log(message, LOG_INFO);

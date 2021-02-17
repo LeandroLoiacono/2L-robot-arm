@@ -4,8 +4,9 @@
 #include <Arduino.h>
 
 #define LOG_ERROR 0
-#define LOG_INFO 1
-#define LOG_DEBUG 2
+#define LOG_WARNING 1
+#define LOG_INFO 2
+#define LOG_DEBUG 3
 
 #ifndef LOG_LEVEL
 #define LOG_LEVEL 0 //DEFAULT VALUE OVERWRITE IT IN config.h
@@ -16,6 +17,7 @@ class Logger {
     static void Logger::log(String message, int level);
     static void Logger::logINFO(String message);
     static void Logger::logERROR(String message);
+    static void Logger::logWARNING(String message);
     static void Logger::logDEBUG(String message);
 };
 #endif

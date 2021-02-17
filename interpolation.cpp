@@ -98,11 +98,11 @@ void Interpolation::setInterpolation(Point p0, Point p1, float av, boolean is_se
 //  if (dist = 0) {
 //    dist = e;
 //  } 
-  if (v < 5) { //includes 0 = default value
+  if (v < DEFAULT_SPEED) { //includes 0 = default value
     v = sqrt(dist) * 10; //set a good value for v
   }
-  if (v < 5) {
-     v = 5; 
+  if (v < DEFAULT_SPEED) {
+     v = DEFAULT_SPEED; 
   }
 
   if(is_segment) {
@@ -428,14 +428,17 @@ void Interpolation::setArcInterpolation(float *target_param, float *offset_param
 }
 
 bool Interpolation::isAllowedPosition(float target[4]) {
-  float squaredPositionModule = target[X_AXIS]*target[X_AXIS] + target[Y_AXIS] * target[Y_AXIS] + target[Z_AXIS]*target[Z_AXIS];
-  
-  if((squaredPositionModule <= R_MAX*R_MAX) 
-      &&
-     (squaredPositionModule >= R_MIN*R_MIN) && (target[Z_AXIS]) >= Z_MIN && (target[Z_AXIS]) <= Z_MAX) {
-    return true;
-  }   
-  Logger::logDEBUG("squaredPositionModule: " + String(squaredPositionModule) + ", R_MIN^2: " + String(R_MIN*R_MIN) + ", R_MAX^2: " + String(R_MAX*R_MAX));
-  Logger::logERROR("Position NOT allowed: [" + String(target[X_AXIS]) + "," + String(target[Y_AXIS]) + "," + String(target[Z_AXIS]) + "," + String(target[E_AXIS]) + "]");
-  return false;
+  float rrot =  hypot(target[X_AXIS], target[Y_AXIS]) - END_EFFECTOR_OFFSET;    //radius from Top View
+  float rrot_ee = hypot(target[X_AXIS], target[Y_AXIS]);
+  float rrot_x = rrot * (target[Y_AXIS] / rrot_ee);
+  float rrot_y = rrot * (target[X_AXIS] / rrot_ee);
+  float r2 = sq(rrot_x) + sq(rrot_y) + sq(target[Z_AXIS]);  
+
+      bool retVal = (
+          r2 <= sq(R_MAX) &&
+          r2 >= sq(R_MIN) && 
+          target[Z_AXIS] >= Z_MIN && 
+          target[Z_AXIS] <= Z_MAX &&  !(target[X_AXIS] ==0 && target[Y_AXIS]==0)
+      );
+  return retVal;
 }
