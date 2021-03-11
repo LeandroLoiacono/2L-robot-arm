@@ -1,4 +1,4 @@
-//20sffactory community_robot v0.21
+//2L Firmware based on 20sffactory community_robot v0.21
 
 #include "config.h"
 #include "pinout.h"
@@ -42,10 +42,14 @@ RobotGeometry geometry(END_EFFECTOR_OFFSET, LOW_SHANK_LENGTH, HIGH_SHANK_LENGTH)
 Interpolation interpolator;
 Queue<Cmd> queue(QUEUE_SIZE);
 Command command;
+bool isDirectMovement = false;
 
 void setup()
 {
   Serial.begin(BAUD);
+  #if USE_SERIAL3
+    Serial3.begin(BAUD);
+  #endif
   
   stepperHigher.setPositionRad(PI / 2.0); // 90°
   stepperLower.setPositionRad(0);         // 0°
@@ -92,10 +96,21 @@ void loop() {
     if (command.handleGcode()) {
       queue.push(command.getCmd());
     }
+    #if USE_SERIAL3
+    if (command.handleSerial3Gcode()) {
+      queue.push(command.getCmd());
+    }
+    #endif
   }
   if ((!queue.isEmpty()) && interpolator.isFinished()) {
     executeCommand(queue.pop());
-    if (PRINT_REPLY) {Serial.println(PRINT_REPLY_MSG);}
+    if (PRINT_REPLY) {
+      #if USE_SERIAL3
+        Serial3.print(PRINT_REPLY_MSG);
+        Serial3.flush();
+      #endif
+      Serial.println(PRINT_REPLY_MSG);
+    }
   }
 
   if (millis() % 500 < 250) {
@@ -152,7 +167,13 @@ void executeCommand(Cmd cmd) {
           Logger::logWARNING("Incorrect Command");
         }
       break;
-      case 4: cmdDwell(cmd); break;
+      case 4: 
+        cmdDwell(cmd); 
+        break;
+      case 6: 
+        isDirectMovement = true;
+        directStepperMove(cmd); 
+        break;
       case 28:
         homeSequence(); 
         break;
@@ -183,6 +204,14 @@ void executeCommand(Cmd cmd) {
       case 106: fan.enable(true); break;
       case 107: fan.enable(false); break;
       case 114: command.cmdGetPosition(interpolator.getPosmm(), stepperHigher.getPosition(), stepperLower.getPosition(), stepperRotate.getPosition()); break;// Return the current positions of all axis 
+      case 119: 
+        Logger::logINFO("ENDSTOP STATE: [UPPER_SHANK(X):"+String(endstopX.state())+" LOWER_SHANK(Y):"+String(endstopY.state())+" ROTATE_GEAR(Z):"+String(endstopZ.state())+"]");
+        #if USE_SERIAL3
+          String endstopState = "ENDSTOP STATE: [UPPER_SHANK(X):"+String(endstopX.state())+" LOWER_SHANK(Y):"+String(endstopY.state())+" ROTATE_GEAR(Z):"+String(endstopZ.state())+"]";
+          Serial3.print(endstopState);
+          Serial3.flush();
+        #endif
+        break;
       default: Logger::logWARNING("Unknown Command");
     }
   } else {
@@ -198,6 +227,25 @@ void setStepperEnable(bool enable){
     stepperRail.enable(enable);
   }
   fan.enable(enable);
+}
+
+void directStepperMove(Cmd &cmd) {
+  Logger::logINFO("directStepperMove: " + String(cmd.valueX) + ", " + String(cmd.valueY) + ", " + String(cmd.valueZ) + ", " + String(cmd.valueE) + ", " + String(cmd.valueR));
+  if(cmd.valueR) {
+    stepperHigher.stepRelative(cmd.valueX);
+    stepperLower.stepRelative(cmd.valueY);
+    stepperRotate.stepRelative(cmd.valueZ);
+    if (RAIL){
+      stepperRail.stepRelative(cmd.valueE);
+    }
+  } else {
+    stepperHigher.stepToPosition(cmd.valueX);
+    stepperLower.stepToPosition(cmd.valueY);
+    stepperRotate.stepToPosition(cmd.valueZ);
+    if (RAIL){
+      stepperRail.stepToPosition(cmd.valueE);
+    }
+  }
 }
 
 void homeSequence(){

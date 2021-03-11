@@ -5,6 +5,7 @@ class Endstop {
   public:
     Endstop(int a_min_pin, int a_dir_pin, int a_step_pin, int a_en_pin, int a_switch_input, int a_step_offset, int a_home_dwell);
     void home(bool dir);
+    bool state();
 
   private:
     int min_pin;

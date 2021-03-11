@@ -1,3 +1,4 @@
+#include "config.h"
 #include "command.h"
 #include "logger.h"
 #include <Arduino.h>
@@ -13,7 +14,9 @@ Command::Command() {
   new_command.valueI = NAN; 
   new_command.valueJ = NAN; 
   new_command.valueK = NAN;
+  new_command.valueR = false;
   message = "";
+  serial3_message = "";
   isRelativeCoord = false;
 }
 
@@ -34,6 +37,30 @@ bool Command::handleGcode() {
   return false;
 }
 
+bool Command::handleSerial3Gcode() {
+  if (Serial3.available()) {
+    char c = Serial3.read();
+    if (c == '\n') {
+       return false; 
+    }
+    if (c == '\r') {
+       if(serial3_message.length() > 3 && serial3_message.startsWith(">>>")) {
+         String serail3_command = serial3_message.substring(3);
+         bool b = processMessage(serail3_command);
+         serial3_message = "";
+         return b;
+       } else {
+         Serial.println(serial3_message);
+         serial3_message = "";
+         return false;
+       }
+    } else {
+       serial3_message += c; 
+    }
+  }
+  return false;
+}
+
 bool Command::processMessage(String msg){
 
   new_command.valueX = NAN; 
@@ -45,8 +72,12 @@ bool Command::processMessage(String msg){
   new_command.valueI = NAN; 
   new_command.valueJ = NAN; 
   new_command.valueK = NAN;
+  new_command.valueR = false;
   msg.toUpperCase();
   msg.replace(" ", "");
+  if(msg[msg.length() - 1] == 'R') {
+    msg += '1'; 
+  }
   int active_index = 0;
   new_command.id = msg[active_index];
   if((new_command.id != 'G') && (new_command.id != 'M')){
@@ -77,7 +108,9 @@ bool Command::processMessage(String msg){
 }
 
 void Command::value_segment(String msg_segment){
+  Logger::logINFO(msg_segment);
   float msg_value = msg_segment.substring(1).toFloat();
+  
   switch (msg_segment[0]){
     case 'X': new_command.valueX = msg_value; break;
     case 'Y': new_command.valueY = msg_value; break;
@@ -88,6 +121,7 @@ void Command::value_segment(String msg_segment){
     case 'I': new_command.valueI = msg_value; break;
     case 'J': new_command.valueJ = msg_value; break;
     case 'K': new_command.valueK = msg_value; break;
+    case 'R': new_command.valueR = msg_value > 0; break;
   }
 }
 
@@ -99,33 +133,50 @@ Cmd Command::getCmd() const {
 void Command::cmdGetPosition(Point pos, float highRad, float lowRad, float rotRad){
   if(isRelativeCoord) {
     Serial.println("// Relative Coordinate Mode //");
+    #if USE_SERIAL3
+      Serial3.print("// Relative Coordinate Mode //\\r\\n");
+      
+    #endif
   } else {
     Serial.println("// Absolute Coordinate Mode //");
+    #if USE_SERIAL3
+      Serial3.print("// Absolute Coordinate Mode //\\r\\n");
+    #endif
   }
-  Serial.print("// Now at: X");
-  Serial.print(pos.xmm);
-  Serial.print(" Y");
-  Serial.print(pos.ymm);
-  Serial.print(" Z");
-  Serial.print(pos.zmm);
-  Serial.print(" E");
-  Serial.println(pos.emm);
-  Serial.print("// Radians - HIGH ");
-  Serial.print(highRad);
-  Serial.print(" LOW ");
-  Serial.print(lowRad);
-  Serial.print(" ROT ");
-  Serial.println(rotRad);
+  String output = "// Now at: X " + String(pos.xmm) + 
+    " Y" + String(pos.ymm) + " Z" + String(pos.zmm) + 
+    " E" + String(pos.emm);
+  Serial.println(output);
+  #if USE_SERIAL3
+    output += "\\r\\n";
+    Serial3.print(output);
+  #endif
+  output = "// Radians - HIGH " + String(highRad) + 
+    " LOW " + String(lowRad) + " ROT " + String(rotRad);
+  Serial.println(output);
+  #if USE_SERIAL3
+    output += "\\r\\n";
+    Serial3.print(output);
+    Serial3.flush();
+  #endif
 }
 
 void Command::cmdToRelative(){
   isRelativeCoord = true;
   Serial.println("// Relative Coordinate Mode //");
+  #if USE_SERIAL3
+    Serial3.print("// Relative Coordinate Mode //\\r\\n");
+    Serial3.flush();
+  #endif
 }
 
 void Command::cmdToAbsolute(){
   isRelativeCoord = false;
   Serial.println("// Absolute Coordinate Mode //");
+  #if USE_SERIAL3
+    Serial3.print("// Absolute Coordinate Mode //\\r\\n");
+    Serial3.flush();
+  #endif
 }
 
 void cmdMove(Cmd(&cmd), Point pos, Point origin, bool isRelativeCoord){

@@ -13,6 +13,7 @@
 
 #define STATE_LINEAR_INTERPOLATION 0
 #define STATE_ARC_INTERPOLATION 1
+#define STATE_STEP_INTERPOLATION 2
 #define STATE_NONE -1
 
 struct Point {
@@ -71,6 +72,7 @@ private:
   void clamp_to_software_endstops(float target[3]);
   void linearUpdate();
   void arcUpdate();
+  void stepUpdate();
   byte state;
   
   long startTime;  

@@ -98,3 +98,5 @@
 //1: INFO
 //2: DEBUG
 #endif
+
+#define USE_SERIAL3 true

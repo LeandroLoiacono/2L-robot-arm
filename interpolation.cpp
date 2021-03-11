@@ -159,6 +159,10 @@ void Interpolation::updateActualPosition() {
       break;
     case STATE_ARC_INTERPOLATION:
       arcUpdate();
+      break;
+    case STATE_STEP_INTERPOLATION:
+      stepUpdate();
+      break;
     default:
       return;
   }    
@@ -306,6 +310,16 @@ void Interpolation::arcUpdate() {
     Logger::logDEBUG("Arc interpolation Done");
   } else if(segments_index < segments_nr) {
     segments_index++;
+  } else {
+    STATE_NONE;
+  }
+}
+
+void Interpolation::stepUpdate() {
+  if(false) {
+    //TODO
+  } else if(false) {
+    //TODO
   } else {
     STATE_NONE;
   }

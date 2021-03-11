@@ -16,12 +16,14 @@ struct Cmd {
   float valueI;
   float valueJ;
   float valueK;
+  bool valueR;
 };
 
 class Command {
   public:
     Command();
     bool handleGcode();
+    bool handleSerial3Gcode();
     bool processMessage(String msg);
     void value_segment(String msg_segment);
     Cmd getCmd() const;
@@ -33,6 +35,7 @@ class Command {
 
   private: 
     String message;
+    String serial3_message;
 };
 
 void cmdMove(Cmd(&cmd), Point pos, Point origin, bool isRelativeCoord);

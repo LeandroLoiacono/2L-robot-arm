@@ -24,7 +24,7 @@ void Endstop::home(bool dir) {
   }
   delayMicroseconds(5);
   bState = digitalRead(min_pin);
-  Logger::logINFO("Waiting endstop " + String(min_pin));
+  Logger::logDEBUG("Waiting endstop " + String(min_pin));
   while (bState != switch_input) {
     digitalWrite(step_pin, HIGH);
     digitalWrite(step_pin, LOW);
@@ -49,4 +49,9 @@ void Endstop::homeOffset(bool dir){
     digitalWrite(step_pin, LOW);
     delayMicroseconds(home_dwell);
   }
+}
+
+bool Endstop::state(){
+  bState = digitalRead(min_pin);
+  return bState;
 }
